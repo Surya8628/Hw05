@@ -1,3 +1,28 @@
 <resources>
-    <string name="app_name">Hw05</string>
+    <string name="app_name">HW05</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="temperature">Temperature</string>
+    <string name="temperatureMin">Temperature Min</string>
+    <string name="temperatureMax">Temperature Max</string>
+    <string name="description">Description</string>
+    <string name="humidity">Humidity</string>
+    <string name="Windspeed">Wind Speed</string>
+    <string name="WindDegree">Wind Degree</string>
+    <string name="Cloudiness">Cloudiness</string>
+    <string name="Cities">Cities</string>
+    <string name="CurrentWeather">Current Weather</string>
+    <string name="Place">Placename</string>
+    <string name="F"> F</string>
+    <string name="percentage"> %</string>
+    <string name="miles"> miles/hr</string>
+    <string name="degrees"> degrees</string>
+    <string name="API_KEY">9d138b14c08a9c41b297bb998ea60329</string>
+    <string name="Humidity">Humidity:</string>
+    <string name="dt_txt">dt_txt</string>
+    <string name="Temp">Temp</string>
+    <string name="Max">Max:</string>
+    <string name="Min">Min:</string>
+    <string name="icon">ICON</string>
+    <string name="CHECK_FORECAST">CHECK FORECAST</string>
+    <string name="WeatherForecast">WeatherForecast</string>
 </resources>
