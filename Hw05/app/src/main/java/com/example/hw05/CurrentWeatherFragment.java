@@ -1,47 +1,53 @@
 package com.example.hw05;
 
+import android.content.Context;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link CurrentWeatherFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
+
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class CurrentWeatherFragment extends Fragment {
+final String TAG="CurrentWeather";
+    private static final String ARG_CITY = "city";
+    static Data.City place;
+    TextView placename, temp, temp_min, temp_max, wind_speed, wind_degree, description, cloudiness, humidity;
+    ImageView icon;
+    Button checkForecast;
+    final OkHttpClient client = new OkHttpClient();
+    private Data.City SelectedCity;
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    public CurrentWeatherFragment(Data.City city) {
+        this.SelectedCity=city;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
-    public CurrentWeatherFragment() {
-        // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment CurrentWeatherFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static CurrentWeatherFragment newInstance(String param1, String param2) {
-        CurrentWeatherFragment fragment = new CurrentWeatherFragment();
+    public static CurrentWeatherFragment newInstance(Data.City city) {
+        CurrentWeatherFragment fragment = new CurrentWeatherFragment(city);
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+        args.putSerializable(ARG_CITY, city);
         fragment.setArguments(args);
         return fragment;
     }
@@ -50,15 +56,93 @@ public class CurrentWeatherFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            SelectedCity = (Data.City) getArguments().getSerializable(ARG_CITY);
         }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_current_weather, container, false);
+        View view= inflater.inflate(R.layout.fragment_current_weather, container, false);
+        getActivity().setTitle(getResources().getString(R.string.CurrentWeather));
+        placename = view.findViewById(R.id.Places);
+        Log.d(TAG, "onCreateView: "+ SelectedCity);
+        placename.setText(SelectedCity.getCity());
+        temp = view.findViewById(R.id.Temperature);
+        temp_max = view.findViewById(R.id.TempMax);
+        temp_min = view.findViewById(R.id.TempMin);
+        description = view.findViewById(R.id.Desc);
+        humidity = view.findViewById(R.id.humidity);
+        wind_speed = view.findViewById(R.id.WindSpeed);
+        wind_degree = view.findViewById(R.id.WindDegree);
+        cloudiness = view.findViewById(R.id.Cloud);
+        checkForecast = view.findViewById(R.id.CheckForecast);
+        icon = (ImageView) view.findViewById(R.id.icon);
+       checkForecast.setOnClickListener(new View.OnClickListener() {
+           @Override
+           public void onClick(View v) {
+                mListener.goToWeatherForecast(SelectedCity);
+           }
+       });
+        getCurrentWeather();
+        return view;
+    }
+    private void getCurrentWeather() {
+        HttpUrl httpUrl = HttpUrl.parse("https://api.openweathermap.org/data/2.5/weather").newBuilder()
+                .addEncodedQueryParameter("q",String.valueOf(SelectedCity.getCity()))
+                .addEncodedQueryParameter("appid", getResources().getString(R.string.API_KEY))
+                .addEncodedQueryParameter("units","imperial")
+                .addQueryParameter("mode","json")
+                .build();
+
+        Request request = new Request.Builder().url(httpUrl).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                try {
+
+
+
+                    JSONObject jsonObject = new JSONObject(response.body().string());
+                     Weather weather = new Weather(jsonObject);
+                    Log.d(TAG, "onResponse: "+weather);
+
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            temp.setText(weather.temp+getResources().getString(R.string.F));
+                            temp_max.setText(weather.temp_max+ getResources().getString(R.string.F));
+                            temp_min.setText(weather.temp_min+getResources().getString(R.string.F));
+                            humidity.setText(weather.humidity+getResources().getString(R.string.percentage));
+                            wind_speed.setText(weather.speed+getResources().getString(R.string.miles));
+                            wind_degree.setText(weather.deg+getResources().getString(R.string.degrees));
+                            description.setText(weather.description);
+                            cloudiness.setText(weather.all+getResources().getString(R.string.percentage));
+                            String path = "http://openweathermap.org/img/wn/"+weather.icon+"@2x.png";
+                            Picasso.get().load(path).into(icon);
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+    }
+
+    CurrentWeatherListener mListener;
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        mListener = (CurrentWeatherListener) context;
+    }
+    public interface CurrentWeatherListener{
+        void goToWeatherForecast(Data.City city);
     }
 }

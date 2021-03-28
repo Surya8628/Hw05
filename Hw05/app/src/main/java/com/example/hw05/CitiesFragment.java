@@ -1,12 +1,22 @@
 package com.example.hw05;
 
+import android.content.Context;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -14,16 +24,18 @@ import android.view.ViewGroup;
  * create an instance of this fragment.
  */
 public class CitiesFragment extends Fragment {
-
+final String TAG="CitiesList";
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-
+    ArrayList<String> allcities=new ArrayList<>();
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
-
+    ArrayList<Data.City> allPlaces;
+    ArrayAdapter<String> arrayAdapter;
+    ListView citiesList;
     public CitiesFragment() {
         // Required empty public constructor
     }
@@ -59,6 +71,37 @@ public class CitiesFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_cities, container, false);
+        View view= inflater.inflate(R.layout.fragment_cities, container, false);
+        Objects.requireNonNull(getActivity()).setTitle(getResources().getString(R.string.Cities));
+        allPlaces = Data.cities;
+        for(Data.City city:allPlaces){
+            String temp=city.getCity();
+            allcities.add(temp);
+            Log.d("getCity", "onCreateView: "+city.getCity());
+        }
+        Log.d("cities", "onCreateView: "+allcities);
+        citiesList = view.findViewById(R.id.citiesListView);
+        arrayAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), android.R.layout.simple_list_item_1, android.R.id.text1, (List<String>) allcities);
+        citiesList.setAdapter(arrayAdapter);
+
+        citiesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Data.City city = allPlaces.get(position);
+                Log.d(TAG, "onItemClick: "+city);
+                mListener.goToCurrentWeatherFragment(city);
+            }
+        });
+        return view;
+    }
+
+    CitiesFragmentListener mListener;
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        mListener = (CitiesFragmentListener) context;
+    }
+    public interface CitiesFragmentListener{
+        void goToCurrentWeatherFragment(Data.City city);
     }
 }
